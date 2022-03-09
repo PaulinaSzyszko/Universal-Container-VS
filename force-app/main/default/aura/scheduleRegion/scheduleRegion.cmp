@@ -1,0 +1,9 @@
+<!--
+ - Created by SZYSZPA on 21-Feb-22.
+ -->
+
+<aura:component controller="ScheduleController"
+                implements="force:hasRecordId,force:lightningQuickActionWithoutHeader">
+
+    <aura:handler name="init" value="{!this}" action="{!c.checkRegionForSchedule}"/>
+</aura:component>

@@ -1,0 +1,8 @@
+<!--
+ - Created by SZYSZPA on 18-Feb-22.
+ -->
+<aura:component controller="OpportunityController"
+                implements="force:hasRecordId,force:lightningQuickActionWithoutHeader">
+
+    <aura:handler name="init" value="{!this}" action="{!c.checkOpportunityRegion}"/>
+</aura:component>

@@ -1,0 +1,136 @@
+<aura:component controller="FindRoutes"
+                implements="lightning:actionOverride,force:hasRecordId,force:lightningQuickActionWithoutHeader">
+    <aura:attribute name="recordId" type="String"/>
+    <aura:attribute name="Routes" type="RouteSearch"/>
+    <aura:attribute name="Columns" type="List"/>
+    <aura:attribute name="maxRowSelection" type="Integer" default="1"/>
+    <aura:attribute name="routeStartDate" type="String"/>
+    <aura:attribute name="routeEndDate" type="String"/>
+    <aura:attribute name="arrivalPort" type="String"/>
+    <aura:attribute name="departurePort" type="String"/>
+    <aura:attribute name="selectedSchedule" type="String"/>
+    <aura:attribute name="tableWithResults" type="Boolean" default="false"/>
+    <aura:attribute name="showMessage" type="Boolean" default="false"/>
+    <aura:attribute name="bookingForm" type="Boolean" default="false"/>
+    <aura:attribute name="spinner" type="Boolean" default="false"/>
+
+
+    <aura:handler name="init" value="{!this}" action="{!c.init}"/>
+
+    <aura:html tag="style">
+        .slds-modal__content {
+        height: auto !important;
+        }
+        .slds-modal__container{
+        width: 100%;
+        max-width: 80vh;
+        }
+        .cuf-content {
+        padding: 0rem !important;
+        }
+        .slds-p-around--medium {
+        padding: 0rem !important;
+        }
+        .slds-table--fixed-layout{
+        padding: 12px;
+        }
+
+
+    </aura:html>
+
+    <lightning:card title="Schedule Booking" class="bookingFrom">
+
+
+        <aura:if isTrue="{!v.spinner}">
+            <lightning:spinner variant="brand" size="medium"/>
+        </aura:if>
+
+        <lightning:recordEditForm objectApiName="Route__c">
+            <lightning:layout horizontalAlign="space">
+                <lightning:layoutItem padding="around-small" size="6">
+                    <lightning:input type="date"
+                                     aura:id="routStartDate" label="Start Date" value="{!v.routeStartDate}"
+                                     onchange="{!c.getSchedule}"/>
+                </lightning:layoutItem>
+                <lightning:layoutItem padding="around-small" size="6">
+                    <lightning:input type="date"
+                                     aura:id="routEndDate" label="End Date" value="{!v.routeEndDate}"
+                                     onchange="{!c.getSchedule}"/>
+                </lightning:layoutItem>
+            </lightning:layout>
+            <lightning:layout horizontalAlign="space">
+                <lightning:layoutItem padding="around-small" size="6">
+                    <lightning:inputField
+                            fieldName="Departure_Port__c" value="{!v.departurePort}"
+                            onchange="{!c.getSchedule}"/>
+                </lightning:layoutItem>
+                <lightning:layoutItem padding="around-small" size="6">
+                    <lightning:inputField
+                            fieldName="Arrival_Port__c" value="{!v.arrivalPort}"
+                            onchange="{!c.getSchedule}"/>
+                </lightning:layoutItem>
+            </lightning:layout>
+        </lightning:recordEditForm>
+    </lightning:card>
+
+    <aura:if isTrue="{!v.showMessage}">
+        <ui:message severity="info">
+            No matching routes found.
+        </ui:message>
+    </aura:if>
+
+    <aura:if isTrue="{!v.tableWithResults}">
+
+        <div class="slds-m-around_small">
+            <lightning:datatable onrowselection="{!c.onRouteSelected}"
+                                 data="{! v.Routes }"
+                                 columns="{! v.Columns }"
+                                 keyField="Id"
+                                 maxRowSelection="{!v.maxRowSelection }"/>
+        </div>
+        <aura:if isTrue="{!v.bookingForm}">
+            <lightning:card>
+                <lightning:recordEditForm objectApiName="Schedule_Booking__c" aura:id="form">
+                    <lightning:layout horizontalAlign="space">
+                        <lightning:layoutItem padding="around-small" size="6">
+                            <lightning:inputField fieldName="TEU__c"/>
+                        </lightning:layoutItem>
+                        <lightning:layoutItem padding="around-small" size="6">
+                            <lightning:inputField fieldName="Amount__c"/>
+                        </lightning:layoutItem>
+                    </lightning:layout>
+                    <lightning:layout horizontalAlign="space">
+                        <lightning:layoutItem padding="around-small" size="6">
+                            <lightning:inputField fieldName="Receiving_Person__c"/>
+                        </lightning:layoutItem>
+                        <lightning:layoutItem padding="around-small" size="6">
+                            <lightning:inputField fieldName="Receiving_Person_in_Port__c"/>
+                        </lightning:layoutItem>
+                    </lightning:layout>
+                    <lightning:layout horizontalAlign="space">
+                        <lightning:layoutItem padding="around-small" size="6">
+                            <lightning:inputField fieldName="Planned_delivery_date__c"/>
+                        </lightning:layoutItem>
+                        <lightning:layoutItem padding="around-small" size="6">
+                            <lightning:inputField fieldName="Status__c" value="New"/>
+                        </lightning:layoutItem>
+                    </lightning:layout>
+                    <div class="slds-m-around_small">
+                        <lightning:inputField fieldName="Type_of_goods__c"/>
+                    </div>
+                    <lightning:inputField fieldName="Schedule__c" class="slds-hidden"
+                                          value="{!v.selectedSchedule}"/>
+                    <lightning:inputField fieldName="Opportunity__c" value="{!v.recordId}" class="slds-hidden"/>
+                </lightning:recordEditForm>
+            </lightning:card>
+        </aura:if>
+    </aura:if>
+    <div class="modal-footer slds-modal__footer attach-to-bottom slds-size_1-of-1">
+        <div class="forceChangeRecordTypeFooter">
+            <lightning:button class="slds-button slds-button_neutral" label="Cancel"
+                              onclick="{!c.cancel}"/>
+            <lightning:button aura:id="saveButton" class="slds-button slds-button_brand" type="submit"
+                              label="Save" onclick="{!c.handleClick}" disabled="true"/>
+        </div>
+    </div>
+</aura:component>
