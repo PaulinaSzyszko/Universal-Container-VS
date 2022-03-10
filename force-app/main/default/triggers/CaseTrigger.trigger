@@ -6,5 +6,4 @@ trigger CaseTrigger on Case (before insert, before update) {
         handler.beforeUpdate(Trigger.new);
         handler.beforeUpdate(Trigger.newMap, Trigger.oldMap);
     }
-
 }
