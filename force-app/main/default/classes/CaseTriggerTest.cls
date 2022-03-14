@@ -37,6 +37,5 @@ private class CaseTriggerTest {
         Case updatedCase = [SELECT Id, OwnerId, Preferred_Language__c FROM Case WHERE Id=:newTestCase.Id];
    
         System.assertEquals(updatedCase.OwnerId, expectedChaneLanguageQueue.Id);
-        
     }
 }
