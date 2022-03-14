@@ -14,7 +14,6 @@ private class CaseRoutingServiceTest {
     }
 
     @isTest static void shouldGetCorrectQueueForCaseGivenExistingCaseId() {
-
         //given
         Group queue = [SELECT Id, DeveloperName FROM Group WHERE Type = 'Queue' AND DeveloperName = 'Payment_Department_English'];
         Case newTestCase = [SELECT Id, OwnerId, Preferred_Language__c FROM Case];
@@ -25,9 +24,7 @@ private class CaseRoutingServiceTest {
         //then
         System.assertEquals(queue.Id, getQueueId);
     }
-
     @IsTest static void shouldReturnNullGivenNotExistingLanguage() {
-
         //given
         User user = [SELECT Id, Name FROM User Where Name = 'System'];
         Case newTestCase = [SELECT Id, OwnerId,Preferred_Language__c FROM Case];

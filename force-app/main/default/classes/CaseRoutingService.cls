@@ -16,7 +16,6 @@ public with sharing class CaseRoutingService {
     public static CaseRoutingService getInstance() {
         if (CaseRoutingService.instance == null) {
             CaseRoutingService.instance = new CaseRoutingService();
-
         }
         return CaseRoutingService.instance;
     }
@@ -27,15 +26,10 @@ public with sharing class CaseRoutingService {
         }
 
         Case_Routing__mdt configuration = CaseRoutingConfiguration.getInstance().getRoutingData(queues.get(newCase.OwnerId).DeveloperName);
-        System.debug('configuration z CaseRouting_mdt ' + configuration);
         if (configuration != null) {
-
             SObjectField languageToGet = languageToQueueMap.get(Language.valueOf(newCase.Preferred_Language__c));
-            system.debug('preferred language: ' + languageToGet);
             String config = (String) configuration.get(languageToGet);
-            System.debug('configuration: ' + config);
             Group routedQueue = developerNameMap.get(config);
-            System.debug('routedQueue: ' + routedQueue);
             return routedQueue != null ? routedQueue.Id : null;
         }
         return null;
@@ -43,17 +37,14 @@ public with sharing class CaseRoutingService {
 
     public String getQueueDispatcherName(Id languageBasedQueueName, Language queueLanguage) {
 
-        String  changeLanguageBasedToString =queues.get(languageBasedQueueName).DeveloperName;
+        String  changeLanguageBasedToString = queues.get(languageBasedQueueName).DeveloperName;
 
         for (Case_Routing__mdt routing : CaseRoutingConfiguration.getInstance().getAllRoutingConfig()) {
             SObjectField routingFieldBasedOnLanguage = languageToQueueMap.get(queueLanguage);
-            System.debug('routing based language: ' + routingFieldBasedOnLanguage);
-            System.debug('language based queue name: ' + changeLanguageBasedToString);
-            System.debug('routing get: ' + routing.get(routingFieldBasedOnLanguage));
-
             if (routingFieldBasedOnLanguage != null && routing.get(routingFieldBasedOnLanguage) == changeLanguageBasedToString) {
-                system.debug('Queue dispatcher: ' + routing.Queue_Dispatcher__c);
                 return routing.Queue_Dispatcher__c;
+            }
+            else{  
             }
         }
         return null;
@@ -61,12 +52,11 @@ public with sharing class CaseRoutingService {
 
     public Id getQueueForDispatcher(String queueDispatcher, Language language) {
         Case_Routing__mdt configuration = CaseRoutingConfiguration.getInstance().getRoutingData(queueDispatcher);
-        if (configuration != null) {
 
+        if (configuration != null) {
             SObjectField languageToGet = languageToQueueMap.get(language);
             String config = (String) configuration.get(languageToGet);
             Group routedQueue = developerNameMap.get(config);
-
             return routedQueue != null ? routedQueue.Id : null;
         }
         return null;
@@ -80,5 +70,4 @@ public with sharing class CaseRoutingService {
             developerNameMap.put(queue.DeveloperName, queue);
         }
     }
-
 }
