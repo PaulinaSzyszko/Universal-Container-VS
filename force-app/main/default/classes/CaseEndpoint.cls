@@ -3,6 +3,9 @@
 
 global with sharing class CaseEndpoint {
     private static final String PARAM_EXTERNAL_ID = 'external_id';
+    private static final String EXCEPTION_MESSAGE_WRONG_PARAMETER_PROVIDED = 'Wrong parameter provided';
+    private static final String EXCEPTION_MESSAGE_CASE_NOT_FOUND = 'Case with given id not found';
+
     @HttpPost
     global static void upsertCases() {
 
@@ -19,10 +22,11 @@ global with sharing class CaseEndpoint {
             newCase.Subject = receivedCase.Subject;
             newCase.Description = receivedCase.Description;
             newCase.Comments = receivedCase.Comments;
-            newCase.SuppliedEmail = receivedCase.SuppliedEmail;
-            newCase.SuppliedPhone = receivedCase.SuppliedPhone;
-            newCase.SuppliedName = receivedCase.SuppliedName;
+            newCase.SuppliedEmail = receivedCase.supplied_email;
+            newCase.SuppliedPhone = receivedCase.supplied_phone;
+            newCase.SuppliedName = receivedCase.supplied_name;
             newCase.External_Id__c = receivedCase.external_id;
+            newCase.Last_Change_Org_Id__c = receivedCase.last_change_source_org;
             casesToUpsert.add(newCase);
         }
         upsert casesToUpsert Case.External_Id__c;
@@ -31,28 +35,36 @@ global with sharing class CaseEndpoint {
     @HttpDelete
     global static void deleteCases() {
         String externalId = RestContext.request.params.get(PARAM_EXTERNAL_ID);
-        if (!String.isBlank(externalId)) {
+        TRY {
             deleteCasesByExternalId(externalId);
-        } else {
+            if (String.isBlank(externalId)) {
+                throw new WrongParametersProvidedException(EXCEPTION_MESSAGE_WRONG_PARAMETER_PROVIDED);
+            }
 
-            String message = 'None or Bad External Id was passed into the parameter.';
-            RestContext.response.responseBody = Blob.valueOf(message);
+        } CATCH (Exception e) {
+            RestContext.response.responseBody = Blob.valueOf(e.getMessage());
             RestContext.response.statusCode = 400;
         }
+
     }
 
     private static void deleteCasesByExternalId(String receivedExternalId) {
 
         List<String> externalIds = receivedExternalId.split(',');
-        List<Case> casesToDelete = new List<Case> ();
-        //casesToDelete.addAll([SELECT External_Id__c FROM Case WHERE External_Id__c in :externalIds]);
         TRY {
-            casesToDelete.add([SELECT External_Id__c FROM Case WHERE External_Id__c in :externalIds]);
+            List<Case> casesToDelete = [SELECT External_Id__c FROM Case WHERE External_Id__c in :externalIds];
+            if (casesToDelete.isEmpty()) {
+                throw new ResourceNotFoundException(EXCEPTION_MESSAGE_CASE_NOT_FOUND);
+            }
+            delete casesToDelete;
         } CATCH (Exception e) {
-            String message = 'Required parameters do not exist';
-            RestContext.response.responseBody = Blob.valueOf(message);
+            RestContext.response.responseBody = Blob.valueOf(e.getMessage());
             RestContext.response.statusCode = 400;
         }
-        delete casesToDelete;
+    }
+
+    private class ResourceNotFoundException extends Exception {
+    }
+    private class WrongParametersProvidedException extends Exception {
     }
 }

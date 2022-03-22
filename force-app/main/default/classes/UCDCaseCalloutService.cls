@@ -1,5 +1,8 @@
 public with sharing class UCDCaseCalloutService {
 
+    private static final String DENYS_ORGS_ENDPOINT = 'callout:Denys_Org/services/apexrest/cases';
+    private static final String URL_PARAM_EXTERNAL_ID = 'external_id';
+
     private static Map<Id, String> adjustRecordTypeForReceiver = new Map<Id, String>{
             CaseUtilities.getRecordTypeIdByDevName(CaseUtilities.RT_INVOICE_REQUEST) => 'Invoice_Request',
             CaseUtilities.getRecordTypeIdByDevName(CaseUtilities.RT_INVOICE_CORRECTION) => 'Invoice_Correction',
@@ -16,13 +19,13 @@ public with sharing class UCDCaseCalloutService {
         String serializedCases = JSON.serialize(dtos);
         Http http = new Http();
         HttpRequest request = new HttpRequest();
-        request.setEndpoint('callout:Denys_Org/services/apexrest/cases');
-        //request.setEndpoint('callout:Filip_Org/services/apexrest/case');
+        request.setEndpoint(DENYS_ORGS_ENDPOINT);
         request.setMethod('POST');
         request.setHeader('Content-Type', 'application/json;charset=UTF-8');
         request.setBody(serializedCases);
 
         HttpResponse response = http.send(request);
+        System.debug(response);
     }
 
     private static List<CaseEndpointDTO> mapCasesToDtos(List<Case> caseData) {
@@ -36,34 +39,28 @@ public with sharing class UCDCaseCalloutService {
         return dtos;
     }
 
-//    public static void sendDeleteCallout(List<Case> caseIdsFromParameter) {
-//
-//        for (Case caseToDelete : caseIdsFromParameter) {
-//            Http http = new Http();
-//            HttpRequest request = new HttpRequest();
-//            request.setEndpoint('callout:Denys_Org/services/apexrest/cases?external_Id=' + caseToDelete.External_Id__c);
-//            request.setHeader('Content-Type', 'application/x-www-form-urlencoded');
-//            // request.setBody()
-//            request.setMethod('DELETE');
-//            http.send(request);
-//        }
-//    }
-
     public static void sendDeleteCallout(List<Case> casesReceivedToDelete) {
-        system.debug('Test');
-        String externalId = '?external_id=';
+        String externalId = URL_PARAM_EXTERNAL_ID;
         HttpRequest request = new HttpRequest();
         Http http = new Http();
         request.setMethod('DELETE');
         request.setHeader('Content-Type', 'application/x-www-form-urlencoded');
-        for (Case processedCase : casesReceivedToDelete) {
-            externalId += processedCase.External_Id__c + ',';
-        }
 
-        externalId = externalId.removeEnd(',');
-
-        request.setEndpoint('callout:Denys_Org/services/apexrest/cases' + externalId);
+        request.setEndpoint(DENYS_ORGS_ENDPOINT + buildEndpointParameterForDelete(casesReceivedToDelete));
+        System.debug(buildEndpointParameterForDelete(casesReceivedToDelete));
         HttpResponse response = http.send(request);
     }
 
+    public static String buildEndpointParameterForDelete(List<Case> casesReceivedToDelete) {
+
+        List<String> externalIdList = new List<String>();
+        for (Case processedCase : casesReceivedToDelete) {
+            externalIdList.add(processedCase.External_Id__c);
+        }
+        String parameterBuilt = new UrlParameterBuilder().addParam(URL_PARAM_EXTERNAL_ID, String.join(externalIdList, ',')).build();
+        if (String.isNotBlank(parameterBuilt)) {
+            return parameterBuilt;
+        }
+        return null;
+    }
 }
