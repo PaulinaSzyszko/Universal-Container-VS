@@ -1,6 +1,5 @@
 public with sharing class UrlParameterBuilder {
 
-    private String urlParam;
     private List<String> paramsList;
 
     public UrlParameterBuilder() {
@@ -23,4 +22,5 @@ public with sharing class UrlParameterBuilder {
     public String build() {
         return String.join(this.paramsList, '&');
     }
+
 }

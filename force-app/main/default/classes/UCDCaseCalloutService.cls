@@ -57,7 +57,7 @@ public with sharing class UCDCaseCalloutService {
         for (Case processedCase : casesReceivedToDelete) {
             externalIdList.add(processedCase.External_Id__c);
         }
-        String parameterBuilt = new UrlParameterBuilder().addParam(URL_PARAM_EXTERNAL_ID, String.join(externalIdList, ',')).build();
+        String parameterBuilt = new RestUtilities.UrlParameterBuilder().addParam(URL_PARAM_EXTERNAL_ID, String.join(externalIdList, ',')).build();
         if (String.isNotBlank(parameterBuilt)) {
             return parameterBuilt;
         }
