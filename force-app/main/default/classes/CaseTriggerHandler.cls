@@ -1,6 +1,7 @@
 public class CaseTriggerHandler {
 
     CaseTriggerHandlerHelper helper = new CaseTriggerHandlerHelper();
+
 //    public void run() {
 //        if (Trigger.isBefore) {
 //            if (Trigger.isInsert) {
@@ -23,6 +24,4 @@ public class CaseTriggerHandler {
         helper.findScheduleBookingId(cases);
         helper.updateLastChangeSourceOrgField(newCases, oldCases);
     }
-
-    //afterUpdate- pojedyncze rekordy
 }

@@ -1,10 +1,8 @@
 
 public with sharing class CaseTriggerHandlerHelper {
 
-    public static Boolean isFirstTime = true;
     private static final String SOURCE_ORG_NAME = 'PAULINA';
 
-    //TODO petla for z Casami
     public void getQueueForCase(List<Case> cases) {
 
         for (Case newCase : cases) {
