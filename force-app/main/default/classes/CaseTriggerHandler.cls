@@ -1,27 +1,99 @@
 public class CaseTriggerHandler {
 
-    CaseTriggerHandlerHelper helper = new CaseTriggerHandlerHelper();
+    private Set<String> caseExternalIdsToDelete;
+    private Set<String> casesExternalIdsToUpsert;
+    public List<Schedule_Booking__c> bookings;
 
-//    public void run() {
-//        if (Trigger.isBefore) {
-//            if (Trigger.isInsert) {
-//                for (Case newCase : (List<Case>) Trigger.new) {
-//                    //TODO before insert
-//                }
-//            } else if (Trigger.isUpdate) {
-//                for (Case newCase : (List<Case>) Trigger.new) {
-//                    // beforeUpdate(Trigger.oldMap.get(newCase.Id), newCase);
-//                }
-//            }
-//        }
-//    }
+    CaseTriggerHandlerHelper helper;
 
-    public void beforeUpdate(List<Case> cases, Map<Id, Case> newCases, Map<Id, Case> oldCases) {
-
-        helper.getQueueForCase(cases);
-        helper.getDefaultQueueForCase(newCases, oldCases);
-        helper.setTotalTimeOpened(newCases, oldCases);
-        helper.findScheduleBookingId(cases);
-        helper.updateLastChangeSourceOrgField(newCases, oldCases);
+    public CaseTriggerHandler() {
+        caseExternalIdsToDelete = new Set<String>();
+        casesExternalIdsToUpsert = new Set<String>();
+        helper = new CaseTriggerHandlerHelper();
     }
+
+    public void run() {
+
+        if (Trigger.isBefore) {
+            //   bulkBefore();
+            if (Trigger.isInsert) {
+                for (Case newCase : (List<Case>) Trigger.new) {
+                    //TODO before insert
+                }
+            } else if (Trigger.isUpdate) {
+                for (Case newCase : (List<Case>) Trigger.new) {
+                    beforeUpdate((Case) Trigger.oldMap.get(newCase.Id), newCase);
+                }
+            }
+        }
+        if (Trigger.isAfter) {
+            if (Trigger.isInsert) {
+                for (Case newCase : (List<Case>) Trigger.new) {
+                    //TODO after insert
+                }
+            } else if (Trigger.isUpdate) {
+                for (Case newCase : (List<Case>) Trigger.new) {
+                    afterUpdate((Case) Trigger.oldMap.get(newCase.Id), newCase);
+                }
+            } else if (Trigger.isDelete) {
+                for (Case oldCase : (List<Case>) Trigger.old) {
+                    afterDelete(oldCase);
+                }
+            }
+        }
+        andFinally();
+    }
+
+    public void beforeUpdate(Case oldCase, Case newCase) {
+
+        helper.updateSourceOrgField(oldCase, newCase);
+        helper.getQueueForCase(newCase);
+        helper.setGuiNumberForNewCase(newCase);
+        helper.getDefaultQueueForCase(oldCase, newCase);
+        helper.setTotalTimeOpened(oldCase, newCase);
+    }
+
+    public void bulkBefore() {
+        bookings = new List<Schedule_Booking__c>([SELECT Name, Id FROM Schedule_Booking__c]);
+
+    }
+
+    public void afterInsert(Case newCase) {
+
+    }
+
+    public void afterUpdate(Case oldCase, Case newCase) {
+        if (helper.isSensitiveDataChanged(oldCase, newCase)) {
+            System.debug('afterUpdate');
+
+            casesExternalIdsToUpsert.add(newCase.External_Id__c);
+            System.debug(casesExternalIdsToUpsert);
+//            if (newCase.Last_Change_Org_Id__c != 'DENYS') {
+//                casesExternalIdsToUpsert.add(newCase.External_Id__c);
+//            }
+        }
+        helper.findScheduleBookingId(newCase);
+    }
+    public void afterDelete(Case oldCase) {
+        if (oldCase.External_Id__c != null) {
+            caseExternalIdsToDelete.add(oldCase.External_Id__c);
+        }
+    }
+
+    public void andFinally() {
+
+        if (Trigger.isUpdate) {
+            System.debug('Upsert');
+            if (!casesExternalIdsToUpsert.isEmpty()) {
+                System.debug(casesExternalIdsToUpsert);
+                UCDCaseCalloutService.sendUpsertCallout(casesExternalIdsToUpsert);
+            }
+        }
+        if (Trigger.isDelete) {
+            if (!caseExternalIdsToDelete.isEmpty()) {
+                UCDCaseCalloutService.sendDeleteCallout(caseExternalIdsToDelete);
+            }
+        }
+    }
+
 }

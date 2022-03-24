@@ -1,4 +1,3 @@
-//@RestResource(urlMapping='/cases')
 @RestResource(urlMapping='/cases/*')
 
 global with sharing class CaseEndpoint {

@@ -1,10 +1,5 @@
-trigger CaseTrigger on Case (before insert, before update) {
+trigger CaseTrigger on Case (before insert, before update, after update, after insert, after delete) {
 
     CaseTriggerHandler handler = new CaseTriggerHandler();
-    //handler.run();
-    
-    if (Trigger.isBefore && Trigger.isUpdate) {
-        handler.beforeUpdate(Trigger.new, Trigger.newMap, Trigger.oldMap);
-    }
-
+    handler.run();
 }

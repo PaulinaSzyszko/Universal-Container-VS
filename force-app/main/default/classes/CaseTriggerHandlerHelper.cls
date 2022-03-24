@@ -3,90 +3,99 @@ public with sharing class CaseTriggerHandlerHelper {
 
     private static final String SOURCE_ORG_NAME = 'PAULINA';
 
-    public void getQueueForCase(List<Case> cases) {
+    //TODO  Fix KPI 'Case Total Open Time'
+    public void setTotalTimeOpened(Case oldCase, Case newCase) {
 
-        for (Case newCase : cases) {
-            if (newCase.OwnerId.getSobjectType() != User.getSObjectType()) {
-                Id queueLanguageId = CaseRoutingService.getInstance().getQueueForCase(newCase);
-                if (queueLanguageId != null) {
-                    newCase.OwnerId = queueLanguageId;
-                    if (newCase.External_Id__c == null) {
-                        newCase.External_Id__c = GuidGenerator.generate();
-                    }
-                    if (String.isBlank(newCase.Last_Change_Org_Id__c)) {
-                        newCase.Last_Change_Org_Id__c = SOURCE_ORG_NAME;
-                    }
+        if (newCase.isClosed != oldCase.isClosed) {
+            if (newCase.isClosed) {
+                if (newCase.Recent_closed_Date__c != null) {
+
+                    Long newTotal = newCase.Total_open_case__c.longValue() + (Datetime.now().getTime() - newCase.Recent_closed_Date__c.getTime());
+                    newCase.Total_time_opened__c = calculateTotalTimeOpened(newTotal);
+                    newCase.Total_open_case__c = newTotal;
+                } else {
+                    Long newTotal = Datetime.now().getTime() - newCase.CreatedDate.getTime();
+                    newCase.Total_open_case__c = newTotal;
+                    newCase.Total_time_opened__c = calculateTotalTimeOpened(newTotal);
                 }
             }
+            newCase.Recent_closed_Date__c = Datetime.now();
         }
     }
 
-    public void getDefaultQueueForCase(Map<Id, Case> newCases, Map<Id, Case> oldCases) {
+    //TODO
+    public void findScheduleBookingId(Case newCase) {
 
-        for (Case newCase : newCases.values()) {
-            if (newCase.OwnerId.getSobjectType() != User.getSObjectType()) {
-                if (newCase.Preferred_Language__c != oldCases.get(newCase.Id).Preferred_Language__c) {
-                    String queueDispatcherName = CaseRoutingService.getInstance().getQueueDispatcherName(oldCases.get(newCase.Id).OwnerId, Language.valueOf(oldCases.get(newCase.Id).Preferred_Language__c));
-                    Id queue = CaseRoutingService.getInstance().getQueueForDispatcher(queueDispatcherName, Language.valueOf(newCase.Preferred_Language__c));
-                    newCase.OwnerId = queue;
-                }
-            }
+        CaseTriggerHandler handler = new CaseTriggerHandler();
+        String findBookingName = newCase.Booking_number_from_contact_form__c;
+        Map<String, Id> bookingNamesAndIds = new Map <String, Id>();
+
+        for (Schedule_Booking__c booking : handler.bookings) {
+            bookingNamesAndIds.put(booking.Name, booking.Id);
         }
+        newCase.Schedule_Booking__c = bookingNamesAndIds.get(newCase.Booking_number_from_contact_form__c);
     }
-    public void updateLastChangeSourceOrgField(Map<Id, Case> newCases, Map<Id, Case> oldCases) {
 
-        for (Case newCase : newCases.values()) {
+    public void updateSourceOrgField(Case oldCase, Case newCase) {
 
-            if (newCase.Preferred_Language__c != oldCases.get(newCase.Id).Preferred_Language__c ||
-                    newCase.RecordType.DeveloperName != oldCases.get(newCase.Id).RecordType.DeveloperName ||
-                    newCase.Priority != oldCases.get(newCase.Id).Priority ||
-                    newCase.Origin != oldCases.get(newCase.Id).Origin ||
-                    newCase.Subject != oldCases.get(newCase.Id).Subject ||
-                    newCase.Description != oldCases.get(newCase.Id).Description ||
-                    newCase.Comments != oldCases.get(newCase.Id).Comments ||
-                    newCase.SuppliedEmail != oldCases.get(newCase.Id).SuppliedEmail ||
-                    newCase.SuppliedPhone != oldCases.get(newCase.Id).SuppliedPhone ||
-                    newCase.SuppliedName != oldCases.get(newCase.Id).SuppliedName) {
-
-                if (RestUtilities.isRestApiContext() == false) {
-                    newCase.Last_Change_Org_Id__c = SOURCE_ORG_NAME;
-                }
+        if (isSensitiveDataChanged(oldCase, newCase)) {
+            if (RestUtilities.isRestApiContext() == false) {
+                newCase.Last_Change_Org_Id__c = SOURCE_ORG_NAME;
             }
         }
     }
 
-    public void setTotalTimeOpened(Map<Id, Case> newCases, Map<Id, Case> oldCases) {
+//    public void caseToBeSendToDenysOrg(Case oldCase, Case newCase) {
+//
+//        Set<Case> casesToBeSend = new Set<Case>();
+//        if (isSensitiveDataChanged(oldCase, newCase)) {
+//            casesToBeSend.add(newCase);
+//        }
+//        //UCDCaseCalloutService.s;
+//    }
 
-        for (Id newCaseId : newCases.keySet()) {
-            if (newCases.get(newCaseId).isClosed != oldCases.get(newCaseId).isClosed) {
-                if (newCases.get(newCaseId).isClosed) {
-                    if (newCases.get(newCaseId).Recent_closed_Date__c != null) {
+    public void getQueueForCase(Case newCase) {
 
-                        Long newTotal = newCases.get(newCaseId).Total_open_case__c.longValue() + (Datetime.now().getTime() - newCases.get(newCaseId).Recent_closed_Date__c.getTime());
-                        newCases.get(newCaseId).Total_time_opened__c = calculateTotalTimeOpened(newTotal);
-                        newCases.get(newCaseId).Total_open_case__c = newTotal;
-                    } else {
-                        Long newTotal = Datetime.now().getTime() - newCases.get(newCaseId).CreatedDate.getTime();
-                        newCases.get(newCaseId).Total_open_case__c = newTotal;
-                        newCases.get(newCaseId).Total_time_opened__c = calculateTotalTimeOpened(newTotal);
-                    }
-                }
-                newCases.get(newCaseId).Recent_closed_Date__c = Datetime.now();
+        if (newCase.OwnerId.getSobjectType() != User.getSObjectType()) {
+            Id queueLanguageId = CaseRoutingService.getInstance().getQueueForCase(newCase);
+            if (queueLanguageId != null) {
+                newCase.OwnerId = queueLanguageId;
             }
         }
     }
 
-    public void findScheduleBookingId(List<Case> cases) {
+    public void setGuiNumberForNewCase(Case newCase) {
 
-        for (Case newCase : cases) {
-            String findBookingName = newCase.Booking_number_from_contact_form__c;
-            List<Schedule_Booking__c> scheduleBooking = [SELECT Name FROM Schedule_Booking__c WHERE Name = :findBookingName];
+        if (newCase.External_Id__c == null) {
+            newCase.External_Id__c = GuidGenerator.generate();
+        }
+    }
 
-            if (!scheduleBooking.isEmpty()) {
-                newCase.Schedule_Booking__c = scheduleBooking.get(0).Id;
+    public void getDefaultQueueForCase(Case oldCase, Case newCase) {
+
+        if (newCase.OwnerId.getSobjectType() != User.getSObjectType()) {
+            if (newCase.Preferred_Language__c != oldCase.Preferred_Language__c) {
+                String queueDispatcherName = CaseRoutingService.getInstance().getQueueDispatcherName(oldCase.OwnerId, Language.valueOf(oldCase.Preferred_Language__c));
+                Id queue = CaseRoutingService.getInstance().getQueueForDispatcher(queueDispatcherName, Language.valueOf(newCase.Preferred_Language__c));
+                newCase.OwnerId = queue;
             }
         }
     }
+
+    public Boolean isSensitiveDataChanged(Case oldCase, Case newCase) {
+
+        return newCase.Preferred_Language__c != oldCase.Preferred_Language__c ||
+                newCase.RecordType.DeveloperName != oldCase.RecordType.DeveloperName ||
+                newCase.Priority != oldCase.Priority ||
+                newCase.Origin != oldCase.Origin ||
+                newCase.Subject != oldCase.Subject ||
+                newCase.Description != oldCase.Description ||
+                newCase.Comments != oldCase.Comments ||
+                newCase.SuppliedEmail != oldCase.SuppliedEmail ||
+                newCase.SuppliedPhone != oldCase.SuppliedPhone ||
+                newCase.SuppliedName != oldCase.SuppliedName;
+    }
+
     private String calculateTotalTimeOpened(Long timeOpenedMillis) {
 
         Long seconds = timeOpenedMillis / 1000;
@@ -100,3 +109,10 @@ public with sharing class CaseTriggerHandlerHelper {
         return 'D: ' + String.valueOf(days) + ' H: ' + String.valueOf(horusLeft) + ' M: ' + String.valueOf(minutesLeft);
     }
 }
+
+
+
+
+
+
+
