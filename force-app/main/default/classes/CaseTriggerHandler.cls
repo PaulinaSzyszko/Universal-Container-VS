@@ -2,7 +2,7 @@ public class CaseTriggerHandler {
 
     private Set<String> caseExternalIdsToDelete;
     private Set<String> casesExternalIdsToUpsert;
-    public List<Schedule_Booking__c> bookings;
+
 
     CaseTriggerHandlerHelper helper;
 
@@ -15,7 +15,7 @@ public class CaseTriggerHandler {
     public void run() {
 
         if (Trigger.isBefore) {
-            //   bulkBefore();
+            bulkBefore();
             if (Trigger.isInsert) {
                 for (Case newCase : (List<Case>) Trigger.new) {
                     //TODO before insert
@@ -51,11 +51,15 @@ public class CaseTriggerHandler {
         helper.setGuiNumberForNewCase(newCase);
         helper.getDefaultQueueForCase(oldCase, newCase);
         helper.setTotalTimeOpened(oldCase, newCase);
+
+        if (newCase.Booking_number_from_contact_form__c != null && newCase.Schedule_Booking__c == null) {
+            System.debug(newCase);
+            helper.setScheduleBookingId(newCase);
+        }
     }
 
     public void bulkBefore() {
-        bookings = new List<Schedule_Booking__c>([SELECT Name, Id FROM Schedule_Booking__c]);
-
+        helper.bookings = new List<Schedule_Booking__c>([SELECT Name, Id FROM Schedule_Booking__c]);
     }
 
     public void afterInsert(Case newCase) {
@@ -72,7 +76,8 @@ public class CaseTriggerHandler {
 //                casesExternalIdsToUpsert.add(newCase.External_Id__c);
 //            }
         }
-        helper.findScheduleBookingId(newCase);
+
+
     }
     public void afterDelete(Case oldCase) {
         if (oldCase.External_Id__c != null) {

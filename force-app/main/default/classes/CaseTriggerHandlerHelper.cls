@@ -2,6 +2,8 @@
 public with sharing class CaseTriggerHandlerHelper {
 
     private static final String SOURCE_ORG_NAME = 'PAULINA';
+    public List<Schedule_Booking__c> bookings;
+
 
     //TODO  Fix KPI 'Case Total Open Time'
     public void setTotalTimeOpened(Case oldCase, Case newCase) {
@@ -24,16 +26,16 @@ public with sharing class CaseTriggerHandlerHelper {
     }
 
     //TODO
-    public void findScheduleBookingId(Case newCase) {
+    public void setScheduleBookingId(Case newCase) {
 
-        CaseTriggerHandler handler = new CaseTriggerHandler();
-        String findBookingName = newCase.Booking_number_from_contact_form__c;
-        Map<String, Id> bookingNamesAndIds = new Map <String, Id>();
-
-        for (Schedule_Booking__c booking : handler.bookings) {
+        Map<String, Id> bookingNamesAndIds = new Map<String, Id>();
+        System.debug(bookings);
+        for (Schedule_Booking__c booking : bookings) {
             bookingNamesAndIds.put(booking.Name, booking.Id);
         }
-        newCase.Schedule_Booking__c = bookingNamesAndIds.get(newCase.Booking_number_from_contact_form__c);
+        if (!bookingNamesAndIds.isEmpty()) {
+            newCase.Schedule_Booking__c = bookingNamesAndIds.get(newCase.Booking_number_from_contact_form__c);
+        }
     }
 
     public void updateSourceOrgField(Case oldCase, Case newCase) {
@@ -45,14 +47,6 @@ public with sharing class CaseTriggerHandlerHelper {
         }
     }
 
-//    public void caseToBeSendToDenysOrg(Case oldCase, Case newCase) {
-//
-//        Set<Case> casesToBeSend = new Set<Case>();
-//        if (isSensitiveDataChanged(oldCase, newCase)) {
-//            casesToBeSend.add(newCase);
-//        }
-//        //UCDCaseCalloutService.s;
-//    }
 
     public void getQueueForCase(Case newCase) {
 
