@@ -1,7 +1,6 @@
 public with sharing class UCDCaseCalloutService {
 
     private static final String DENYS_ORG_ENDPOINT = 'callout:Denys_Org/services/apexrest/cases';
-    // private static final String FILIPS_ORG_ENDPOINT = 'callout:Filip_Org/services/apexrest/case';
     private static final String URL_PARAM_EXTERNAL_ID = 'external_id';
 
     private static Map<Id, String> adjustRecordTypeForReceiver = new Map<Id, String>{
@@ -22,7 +21,6 @@ public with sharing class UCDCaseCalloutService {
                 FROM Case
                 WHERE External_Id__c in :casesExternalIds
         ];
-
         System.debug(casesToSend);
         sendUpsertCallout(casesToSend);
     }
@@ -66,7 +64,6 @@ public with sharing class UCDCaseCalloutService {
         HttpResponse response = http.send(request);
         System.debug(response);
         System.debug(response.getBody());
-        System.debug(response.getBody());
     }
 
     public static String buildEndpointParameterForDelete(List<Case> casesReceivedToDelete) {
@@ -93,5 +90,4 @@ public with sharing class UCDCaseCalloutService {
         }
         return dtos;
     }
-
 }

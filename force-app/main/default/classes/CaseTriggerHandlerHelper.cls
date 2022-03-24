@@ -25,11 +25,9 @@ public with sharing class CaseTriggerHandlerHelper {
         }
     }
 
-    //TODO
     public void setScheduleBookingId(Case newCase) {
 
         Map<String, Id> bookingNamesAndIds = new Map<String, Id>();
-        System.debug(bookings);
         for (Schedule_Booking__c booking : bookings) {
             bookingNamesAndIds.put(booking.Name, booking.Id);
         }
@@ -46,8 +44,7 @@ public with sharing class CaseTriggerHandlerHelper {
             }
         }
     }
-
-
+    
     public void getQueueForCase(Case newCase) {
 
         if (newCase.OwnerId.getSobjectType() != User.getSObjectType()) {

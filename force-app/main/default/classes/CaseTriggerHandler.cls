@@ -2,7 +2,7 @@ public class CaseTriggerHandler {
 
     private Set<String> caseExternalIdsToDelete;
     private Set<String> casesExternalIdsToUpsert;
-
+    private static final String LAST_SOURCE_ORG_DENYS = 'DENYS';
 
     CaseTriggerHandlerHelper helper;
 
@@ -33,6 +33,7 @@ public class CaseTriggerHandler {
                 }
             } else if (Trigger.isUpdate) {
                 for (Case newCase : (List<Case>) Trigger.new) {
+                    System.debug(newCase);
                     afterUpdate((Case) Trigger.oldMap.get(newCase.Id), newCase);
                 }
             } else if (Trigger.isDelete) {
@@ -67,18 +68,14 @@ public class CaseTriggerHandler {
     }
 
     public void afterUpdate(Case oldCase, Case newCase) {
+
         if (helper.isSensitiveDataChanged(oldCase, newCase)) {
-            System.debug('afterUpdate');
-
-            casesExternalIdsToUpsert.add(newCase.External_Id__c);
-            System.debug(casesExternalIdsToUpsert);
-//            if (newCase.Last_Change_Org_Id__c != 'DENYS') {
-//                casesExternalIdsToUpsert.add(newCase.External_Id__c);
-//            }
+            if (newCase.Last_Change_Org_Id__c != LAST_SOURCE_ORG_DENYS) {
+                casesExternalIdsToUpsert.add(newCase.External_Id__c);
+            }
         }
-
-
     }
+
     public void afterDelete(Case oldCase) {
         if (oldCase.External_Id__c != null) {
             caseExternalIdsToDelete.add(oldCase.External_Id__c);
@@ -90,7 +87,7 @@ public class CaseTriggerHandler {
         if (Trigger.isUpdate) {
             System.debug('Upsert');
             if (!casesExternalIdsToUpsert.isEmpty()) {
-                System.debug(casesExternalIdsToUpsert);
+                System.debug('Cases send to Upsert: ' + casesExternalIdsToUpsert);
                 UCDCaseCalloutService.sendUpsertCallout(casesExternalIdsToUpsert);
             }
         }
