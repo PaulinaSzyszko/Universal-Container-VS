@@ -1,16 +1,16 @@
-public with sharing class DeleteCasesCalloutQueueable implements Queueable, Database.AllowsCallouts {
+public with sharing class DeleteCasesCalloutQueueable extends CasesCalloutQueueable {
 
-    private List<Case> casesToDelete;
+    public DeleteCasesCalloutQueueable(Set<String> casesExternalIds) {
 
-    public DeleteCasesCalloutQueueable(List<Case> cases) {
-
-        this.casesToDelete = cases;
+        super(casesExternalIds);
     }
     
-    public void execute(QueueableContext context) {
-
-        if (!casesToDelete.isEmpty()) {
-            UCDCaseCalloutService.sendDeleteCallout(casesToDelete);
+    protected override void executeCallout() {
+        List<Case> casesList = new List<Case>();
+        for (String externalId : casesExternalIds) {
+            casesList.add(new Case(External_Id__c = externalId));
         }
+        UCDCaseCalloutService.sendDeleteCallout(casesList);
     }
+
 }

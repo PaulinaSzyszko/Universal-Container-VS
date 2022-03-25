@@ -12,7 +12,7 @@ public with sharing class UCDCaseCalloutService {
             CaseUtilities.getRecordTypeIdByDevName(CaseUtilities.RT_MISSING_DAMAGED_GOODS) => 'Missing/Damaged_Goods',
             CaseUtilities.getRecordTypeIdByDevName(CaseUtilities.RT_OTHER) => 'Other'
     };
-    
+
     public static void sendUpsertCallout(List<Case> caseData) {
 
         List<CaseEndpointDTO> dtos = mapCasesToDtos(caseData);
@@ -30,7 +30,7 @@ public with sharing class UCDCaseCalloutService {
         System.debug(response.getBody());
 
     }
-
+    
     public static void sendDeleteCallout(List<Case> casesReceivedToDelete) {
 
         HttpRequest request = new HttpRequest();
@@ -39,6 +39,7 @@ public with sharing class UCDCaseCalloutService {
         request.setMethod('DELETE');
         request.setHeader('Content-Type', 'application/x-www-form-urlencoded');
         request.setEndpoint(DENYS_ORG_ENDPOINT + buildEndpointParameterForDelete(casesReceivedToDelete));
+        System.debug(request.getEndpoint());
         HttpResponse response = http.send(request);
         System.debug(response);
         System.debug(response.getBody());

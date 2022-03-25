@@ -1,15 +1,15 @@
 public class CaseTriggerHandler {
 
-    private static List<Case> casesToUpsert;
-    private static List<Case> casesToDelete;
+    private static Set<String> casesExternalIdsToUpsert;
+    private static Set<String> casesExternalIdsToDelete;
     private static final String LAST_SOURCE_ORG_DENYS = 'DENYS';
     private static Boolean isUpsertRequestSend = false;
     private static Boolean isDeleteRequestSend = false;
     CaseTriggerHandlerHelper helper;
 
     public CaseTriggerHandler() {
-        casesToUpsert = new List<Case>();
-        casesToDelete = new List<Case>();
+        casesExternalIdsToUpsert = new Set<String>();
+        casesExternalIdsToDelete = new Set<String>();
         helper = new CaseTriggerHandlerHelper();
     }
 
@@ -45,6 +45,7 @@ public class CaseTriggerHandler {
         }
         andFinally();
     }
+
     public void bulkBefore(Case newCase) {
 
         if (newCase.Booking_number_from_contact_form__c != null && newCase.Schedule_Booking__c == null) {
@@ -79,7 +80,7 @@ public class CaseTriggerHandler {
 
         if (newCase.External_Id__c != null) {
             if (newCase.Last_Change_Org_Id__c != LAST_SOURCE_ORG_DENYS) {
-                casesToUpsert.add(newCase);
+                casesExternalIdsToUpsert.add(newCase.External_Id__c);
             }
         }
     }
@@ -87,7 +88,7 @@ public class CaseTriggerHandler {
     public void afterUpdate(Case oldCase, Case newCase) {
         if (newCase.External_Id__c != null) {
             if (helper.isSensitiveDataChanged(oldCase, newCase) && newCase.Last_Change_Org_Id__c != LAST_SOURCE_ORG_DENYS) {
-                casesToUpsert.add(newCase);
+                casesExternalIdsToUpsert.add(newCase.External_Id__c);
             }
         }
     }
@@ -95,21 +96,21 @@ public class CaseTriggerHandler {
     public void afterDelete(Case oldCase) {
 
         if (oldCase.External_Id__c != null && oldCase.Last_Change_Org_Id__c != LAST_SOURCE_ORG_DENYS) {
-            casesToDelete.add(oldCase);
+            casesExternalIdsToDelete.add(oldCase.External_Id__c);
         }
     }
 
     public void andFinally() {
 
         if (Trigger.isDelete) {
-            if (!casesToDelete.isEmpty() && isDeleteRequestSend == false) {
+            if (!casesExternalIdsToDelete.isEmpty() && isDeleteRequestSend == false) {
                 isDeleteRequestSend = true;
-                System.enqueueJob(new DeleteCasesCalloutQueueable(casesToDelete));
+                System.enqueueJob(new DeleteCasesCalloutQueueable(casesExternalIdsToDelete));
             }
         } else {
-            if (!casesToUpsert.isEmpty() && isUpsertRequestSend == false) {
+            if (!casesExternalIdsToUpsert.isEmpty() && isUpsertRequestSend == false) {
                 isUpsertRequestSend = true;
-                System.enqueueJob(new UpsertCasesCalloutQueueable(casesToUpsert));
+                System.enqueueJob(new UpsertCasesCalloutQueueable(casesExternalIdsToUpsert));
             }
         }
     }

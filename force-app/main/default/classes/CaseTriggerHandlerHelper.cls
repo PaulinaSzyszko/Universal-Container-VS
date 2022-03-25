@@ -1,7 +1,7 @@
 
 public with sharing class CaseTriggerHandlerHelper {
 
-    private static final String SOURCE_ORG_NAME = 'PAULINA';
+    @TestVisible private static final String SOURCE_ORG_NAME = 'PAULINA';
     public List<Schedule_Booking__c> bookings;
 
 

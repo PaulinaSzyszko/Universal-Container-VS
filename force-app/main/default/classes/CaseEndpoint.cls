@@ -1,5 +1,4 @@
 @RestResource(urlMapping='/cases/*')
-
 global with sharing class CaseEndpoint {
     private static final String PARAM_EXTERNAL_ID = 'external_id';
     private static final String EXCEPTION_MESSAGE_WRONG_PARAMETER_PROVIDED = 'Wrong parameter provided';
@@ -48,13 +47,15 @@ global with sharing class CaseEndpoint {
     }
 
     private static void deleteCasesByExternalId(String receivedExternalId) {
-
+        System.debug(receivedExternalId);
         List<String> externalIds = receivedExternalId.split(',');
         TRY {
             List<Case> casesToDelete = [SELECT External_Id__c FROM Case WHERE External_Id__c in :externalIds];
+
             if (casesToDelete.isEmpty()) {
                 throw new ResourceNotFoundException(EXCEPTION_MESSAGE_CASE_NOT_FOUND);
             }
+            System.debug(casesToDelete);
             delete casesToDelete;
         } CATCH (Exception e) {
             RestContext.response.responseBody = Blob.valueOf(e.getMessage());

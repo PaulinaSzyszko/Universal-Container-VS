@@ -1,16 +1,18 @@
-public with sharing class UpsertCasesCalloutQueueable implements Queueable, Database.AllowsCallouts {
+public with sharing class UpsertCasesCalloutQueueable extends CasesCalloutQueueable {
 
-    private List<Case> casesToSend;
+    public UpsertCasesCalloutQueueable(Set<String> casesExternalIds) {
 
-    public UpsertCasesCalloutQueueable(List<Case> cases) {
-
-        this.casesToSend = cases;
+        super(casesExternalIds);
     }
 
-    public void execute(QueueableContext context) {
-        
-        if (!casesToSend.isEmpty()) {
-            UCDCaseCalloutService.sendUpsertCallout(casesToSend);
-        }
+    protected override void executeCallout() {
+
+        List<Case> casesToSend = [
+                SELECT External_Id__c, Preferred_Language__c, RecordType.DeveloperName, Priority, Origin, Subject, Description, Comments, SuppliedEmail, SuppliedPhone, SuppliedName, Last_Change_Org_Id__c
+                FROM Case
+                WHERE External_Id__c in :casesExternalIds
+        ];
+
+        UCDCaseCalloutService.sendUpsertCallout(casesToSend);
     }
 }
