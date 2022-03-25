@@ -1,6 +1,6 @@
 public with sharing class UCDCaseCalloutService {
 
-    private static final String DENYS_ORG_ENDPOINT = 'callout:Denys_Org/services/apexrest/cases';
+    private static final String DENYS_ORG_ENDPOINT = 'callout:Denys_Org/services/apexrest/cases/';
     private static final String URL_PARAM_EXTERNAL_ID = 'external_id';
 
     private static Map<Id, String> adjustRecordTypeForReceiver = new Map<Id, String>{
@@ -12,19 +12,7 @@ public with sharing class UCDCaseCalloutService {
             CaseUtilities.getRecordTypeIdByDevName(CaseUtilities.RT_MISSING_DAMAGED_GOODS) => 'Missing/Damaged_Goods',
             CaseUtilities.getRecordTypeIdByDevName(CaseUtilities.RT_OTHER) => 'Other'
     };
-
-    @future(callout=true)
-    public static void sendUpsertCallout(Set<String> casesExternalIds) {
-        System.debug(casesExternalIds);
-        List<Case> casesToSend = [
-                SELECT External_Id__c, Preferred_Language__c, RecordType.DeveloperName, Priority, Origin, Subject, Description, Comments, SuppliedEmail, SuppliedPhone, SuppliedName, Last_Change_Org_Id__c
-                FROM Case
-                WHERE External_Id__c in :casesExternalIds
-        ];
-        System.debug(casesToSend);
-        sendUpsertCallout(casesToSend);
-    }
-
+    
     public static void sendUpsertCallout(List<Case> caseData) {
 
         List<CaseEndpointDTO> dtos = mapCasesToDtos(caseData);
@@ -32,7 +20,6 @@ public with sharing class UCDCaseCalloutService {
         Http http = new Http();
         HttpRequest request = new HttpRequest();
         request.setEndpoint(DENYS_ORG_ENDPOINT);
-        System.debug(DENYS_ORG_ENDPOINT);
         request.setMethod('POST');
         request.setHeader('Content-Type', 'application/json;charset=UTF-8');
         request.setBody(serializedCases);
@@ -42,15 +29,6 @@ public with sharing class UCDCaseCalloutService {
         System.debug(response);
         System.debug(response.getBody());
 
-    }
-
-    @Future(Callout=true)
-    public static void sendDeleteCallout(Set<String> casesExternalIds) {
-        List<Case> casesList = new List<Case>();
-        for (String externalId : casesExternalIds) {
-            casesList.add(new Case(External_Id__c = externalId));
-        }
-        sendDeleteCallout(casesList);
     }
 
     public static void sendDeleteCallout(List<Case> casesReceivedToDelete) {

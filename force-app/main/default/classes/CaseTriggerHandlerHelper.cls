@@ -44,7 +44,12 @@ public with sharing class CaseTriggerHandlerHelper {
             }
         }
     }
-    
+
+    public void setSourceOrgFieldUponInsert(Case newCase) {
+
+        newCase.Last_Change_Org_Id__c = SOURCE_ORG_NAME;
+    }
+
     public void getQueueForCase(Case newCase) {
 
         if (newCase.OwnerId.getSobjectType() != User.getSObjectType()) {
@@ -55,11 +60,9 @@ public with sharing class CaseTriggerHandlerHelper {
         }
     }
 
-    public void setGuiNumberForNewCase(Case newCase) {
+    public void generateExternalIdForNewCase(Case newCase) {
 
-        if (newCase.External_Id__c == null) {
-            newCase.External_Id__c = GuidGenerator.generate();
-        }
+        newCase.External_Id__c = GuidGenerator.generate();
     }
 
     public void getDefaultQueueForCase(Case oldCase, Case newCase) {
@@ -76,7 +79,7 @@ public with sharing class CaseTriggerHandlerHelper {
     public Boolean isSensitiveDataChanged(Case oldCase, Case newCase) {
 
         return newCase.Preferred_Language__c != oldCase.Preferred_Language__c ||
-                newCase.RecordType.DeveloperName != oldCase.RecordType.DeveloperName ||
+                newCase.RecordTypeId != oldCase.RecordTypeId ||
                 newCase.Priority != oldCase.Priority ||
                 newCase.Origin != oldCase.Origin ||
                 newCase.Subject != oldCase.Subject ||
