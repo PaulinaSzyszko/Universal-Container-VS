@@ -2,7 +2,13 @@
 public with sharing class CaseTriggerHandlerHelper {
 
     @TestVisible private static final String SOURCE_ORG_NAME = 'PAULINA';
-    public List<Schedule_Booking__c> bookings;
+    @TestVisible private static final String SOURCE_ORG_NAME_FILIP = 'FILIP';
+    @TestVisible static final String GROUP_TYPE = 'Queue';
+    @TestVisible static final String QUEUE_DEVELOPER_NAME_MAIN_QUEUE = 'Payment_Department';
+    @TestVisible static final String QUEUE_DEVELOPER_NAME_ENGLISH = 'Payment_Department_English';
+    @TestVisible static final String QUEUE_DEVELOPER_NAME_GERMAN = 'Payment_Department_German';
+
+    public Map<String, Id> bookings;
 
 
     //TODO  Fix KPI 'Case Total Open Time'
@@ -10,6 +16,7 @@ public with sharing class CaseTriggerHandlerHelper {
 
         if (newCase.isClosed != oldCase.isClosed) {
             if (newCase.isClosed) {
+                System.debug(LoggingLevel.ERROR, newCase.Recent_closed_Date__c);
                 if (newCase.Recent_closed_Date__c != null) {
 
                     Long newTotal = newCase.Total_open_case__c.longValue() + (Datetime.now().getTime() - newCase.Recent_closed_Date__c.getTime());
@@ -25,19 +32,27 @@ public with sharing class CaseTriggerHandlerHelper {
         }
     }
 
+    public void setBookings(Set<String> bookingNames) {
+
+        bookings = new Map<String, Id>();
+
+        for (Schedule_Booking__c booking : [SELECT Id, Name FROM Schedule_Booking__c WHERE Name IN :bookingNames]) {
+            bookings.put(booking.Name, booking.Id);
+        }
+    }
+
     public void setScheduleBookingId(Case newCase) {
 
-        Map<String, Id> bookingNamesAndIds = new Map<String, Id>();
-        for (Schedule_Booking__c booking : bookings) {
-            bookingNamesAndIds.put(booking.Name, booking.Id);
-        }
-        if (!bookingNamesAndIds.isEmpty()) {
-            newCase.Schedule_Booking__c = bookingNamesAndIds.get(newCase.Booking_number_from_contact_form__c);
+        if (newCase.Booking_number_from_contact_form__c != null && newCase.Schedule_Booking__c == null && bookings != null) {
+            newCase.Schedule_Booking__c = bookings.get(newCase.Booking_number_from_contact_form__c);
         }
     }
 
     public void updateSourceOrgField(Case oldCase, Case newCase) {
 
+        System.debug(oldCase.Last_Change_Org_Id__c);
+        System.debug(newCase.Last_Change_Org_Id__c);
+        //newCase.Last_Change_Org_Id__c != oldCase.Last_Change_Org_Id__c
         if (isSensitiveDataChanged(oldCase, newCase)) {
             if (RestUtilities.isRestApiContext() == false) {
                 newCase.Last_Change_Org_Id__c = SOURCE_ORG_NAME;
@@ -47,7 +62,9 @@ public with sharing class CaseTriggerHandlerHelper {
 
     public void setSourceOrgFieldUponInsert(Case newCase) {
 
-        newCase.Last_Change_Org_Id__c = SOURCE_ORG_NAME;
+        if (newCase.Last_Change_Org_Id__c == null) {
+            newCase.Last_Change_Org_Id__c = SOURCE_ORG_NAME;
+        }
     }
 
     public void getQueueForCase(Case newCase) {
@@ -55,14 +72,18 @@ public with sharing class CaseTriggerHandlerHelper {
         if (newCase.OwnerId.getSobjectType() != User.getSObjectType()) {
             Id queueLanguageId = CaseRoutingService.getInstance().getQueueForCase(newCase);
             if (queueLanguageId != null) {
+                System.debug('getQueueForCase' + queueLanguageId);
                 newCase.OwnerId = queueLanguageId;
             }
         }
     }
 
     public void generateExternalIdForNewCase(Case newCase) {
+        System.debug(newCase.External_Id__c);
+        if (newCase.External_Id__c == null) {
+            newCase.External_Id__c = GuidGenerator.generate();
+        }
 
-        newCase.External_Id__c = GuidGenerator.generate();
     }
 
     public void getDefaultQueueForCase(Case oldCase, Case newCase) {

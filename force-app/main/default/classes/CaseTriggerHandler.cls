@@ -16,9 +16,7 @@ public class CaseTriggerHandler {
     public void run() {
 
         if (Trigger.isBefore) {
-            for (Case newCase : (List<Case>) Trigger.new) {
-                bulkBefore(newCase);
-            }
+            bulkBefore();
             if (Trigger.isInsert) {
                 for (Case newCase : (List<Case>) Trigger.new) {
                     beforeInsert(newCase);
@@ -46,19 +44,25 @@ public class CaseTriggerHandler {
         andFinally();
     }
 
-    public void bulkBefore(Case newCase) {
+    public void bulkBefore() {
 
-        if (newCase.Booking_number_from_contact_form__c != null && newCase.Schedule_Booking__c == null) {
-            helper.bookings = new List<Schedule_Booking__c>([SELECT Name, Id FROM Schedule_Booking__c]);
+        Set<String> bookingNames = new Set<String>();
+
+        for (Case caseRecord : (List<Case>) Trigger.new) {
+            if (String.isNotBlank(caseRecord.Booking_number_from_contact_form__c) && caseRecord.Schedule_Booking__c == null) {
+                bookingNames.add(caseRecord.Booking_number_from_contact_form__c);
+            }
+        }
+        if (!bookingNames.isEmpty()) {
+            helper.setBookings(bookingNames);
         }
     }
 
     public void beforeInsert(Case newCase) {
-
-        if (newCase.External_Id__c == null) {
-            helper.setSourceOrgFieldUponInsert(newCase);
-            helper.generateExternalIdForNewCase(newCase);
-        }
+        
+        helper.setSourceOrgFieldUponInsert(newCase);
+        helper.generateExternalIdForNewCase(newCase);
+        helper.setScheduleBookingId(newCase);
     }
 
     public void beforeUpdate(Case oldCase, Case newCase) {
@@ -66,14 +70,8 @@ public class CaseTriggerHandler {
         helper.getQueueForCase(newCase);
         helper.getDefaultQueueForCase(oldCase, newCase);
         helper.setTotalTimeOpened(oldCase, newCase);
+        helper.updateSourceOrgField(oldCase, newCase);
 
-        if (newCase.Last_Change_Org_Id__c != oldCase.Last_Change_Org_Id__c) {
-            helper.updateSourceOrgField(oldCase, newCase);
-        }
-
-        if (helper.bookings != null) {
-            helper.setScheduleBookingId(newCase);
-        }
     }
 
     public void afterInsert(Case newCase) {
@@ -86,6 +84,7 @@ public class CaseTriggerHandler {
     }
 
     public void afterUpdate(Case oldCase, Case newCase) {
+
         if (newCase.External_Id__c != null) {
             if (helper.isSensitiveDataChanged(oldCase, newCase) && newCase.Last_Change_Org_Id__c != LAST_SOURCE_ORG_DENYS) {
                 casesExternalIdsToUpsert.add(newCase.External_Id__c);
