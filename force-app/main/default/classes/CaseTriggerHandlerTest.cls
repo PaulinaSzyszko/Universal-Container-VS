@@ -32,7 +32,6 @@ private class CaseTriggerHandlerTest {
         Case caseAfterInsert = [SELECT Id, External_Id__c, Last_Change_Org_Id__c, Last_status_change_date__c FROM Case WHERE Id = :newCase.Id LIMIT 1];
 
         System.assertEquals(CaseTriggerHandlerHelper.SOURCE_ORG_NAME, caseAfterInsert.Last_Change_Org_Id__c);
-        System.debug(caseAfterInsert.External_Id__c);
         System.assertNotEquals(null, caseAfterInsert.External_Id__c);
     }
 
@@ -55,7 +54,6 @@ private class CaseTriggerHandlerTest {
     }
 
     @IsTest private static void shouldNotAssignBookingToCaseBeforeInsertNoValue() {
-        Schedule_Booking__c scheduleBooking = [SELECT Id FROM Schedule_Booking__c];
 
         Case newCase = new Case();
 
@@ -70,7 +68,6 @@ private class CaseTriggerHandlerTest {
     }
 
     @IsTest private static void shouldNotAssignBookingToCaseBeforeInsertNoBooking() {
-        Schedule_Booking__c scheduleBooking = [SELECT Id FROM Schedule_Booking__c];
 
         Case newCase = new Case();
         newCase.Booking_number_from_contact_form__c = 'Not existing schedule Booking Id';
@@ -170,8 +167,23 @@ private class CaseTriggerHandlerTest {
         Case caseAfterInsert = [SELECT Id, Last_Change_Org_Id__c FROM Case WHERE Id = :newCase.Id LIMIT 1];
         System.assertEquals(CaseTriggerHandlerHelper.SOURCE_ORG_NAME, caseAfterInsert.Last_Change_Org_Id__c);
     }
-    // dodac negatywny test
-    
+
+    @IsTest private static void shouldUpdateSourceOrgWhenNonSensitiveDataChanged() {
+        Case newCase = new Case();
+        newCase.Last_Change_Org_Id__c = CaseTriggerHandlerHelper.SOURCE_ORG_NAME_FILIP;
+        insert newCase;
+
+        Test.setMock(HttpCalloutMock.class, new HTTPMockFactory());
+        Test.startTest();
+        newCase.SuppliedCompany = 'Test Company';
+        update newCase;
+        System.debug(newCase.Last_Change_Org_Id__c);
+        Test.stopTest();
+
+        Case caseAfterInsert = [SELECT Id, Last_Change_Org_Id__c FROM Case WHERE Id = :newCase.Id LIMIT 1];
+        System.assertEquals(CaseTriggerHandlerHelper.SOURCE_ORG_NAME_FILIP, caseAfterInsert.Last_Change_Org_Id__c);
+    }
+
     @IsTest private static void shouldSendDeleteRequestOnDelete() {
 
         Case newCase = new Case();
@@ -189,18 +201,56 @@ private class CaseTriggerHandlerTest {
     @IsTest private static void shouldSetTotalOpenedTimeBeforeUpdate() {
 
         Case newCase = new Case();
-
         insert newCase;
-        newCase.Status = 'Closed';
 
         Test.setMock(HttpCalloutMock.class, new HTTPMockFactory());
         Test.startTest();
+        newCase.Status = 'Closed';
         update newCase;
         Test.stopTest();
 
-        Case caseAfterUpdate = [SELECT Id, Total_open_case__c, Total_time_opened__c, IsClosed FROM Case WHERE Id = :newCase.Id];
+        Case caseAfterUpdate = [SELECT Id, Total_open_case__c, Total_time_opened__c, IsClosed, Recent_closed_Date__c FROM Case WHERE Id = :newCase.Id];
+        System.debug(caseAfterUpdate);
+        System.debug(caseAfterUpdate.Recent_closed_Date__c);
 
-        // System.assertNotEquals(null, caseAfterUpdate.Total_open_case__c);
+        System.assertNotEquals(null, caseAfterUpdate.Total_time_opened__c);
+    }
+
+    @IsTest private static void shouldSetTotalOpenedTimeAfterCaseReopen() {
+
+        Test.setMock(HttpCalloutMock.class, new HTTPMockFactory());
+        Test.startTest();
+        Case newCase = new Case();
+        newCase.Status = 'New';
+        newCase.Total_open_case__c = Decimal.valueOf(0);
+        insert newCase;
+        Case insertedCase = [SELECT Id, Total_open_case__c, Total_time_opened__c, IsClosed, Recent_closed_Date__c FROM Case WHERE Id = :newCase.Id];
+
+
+        insertedCase.Status = 'Closed';
+        insertedCase.Recent_closed_Date__c = DateTime.now().addMinutes(-10);
+        update insertedCase;
+
+//        insertedCase.Status = 'New';
+//        update insertedCase;
+//
+//        insertedCase.Status = 'Closed';
+//        insertedCase.Recent_closed_Date__c = Datetime.now().addMinutes(-11);
+//        update insertedCase;
+
+
+        System.debug('updated status');
+        System.debug(insertedCase.Status);
+
+        Case caseAfterUpdate = [SELECT Id, Total_open_case__c, Total_time_opened__c, IsClosed, Recent_closed_Date__c FROM Case WHERE Id = :insertedCase.Id];
+        System.debug(LoggingLevel.ERROR, 'after update' + caseAfterUpdate);
+        System.debug(LoggingLevel.ERROR, 'after update' + caseAfterUpdate.Total_open_case__c);
+        System.debug(caseAfterUpdate.Recent_closed_Date__c);
+        System.debug(caseAfterUpdate.Total_time_opened__c);
+        System.debug(caseAfterUpdate.Total_open_case__c);
+
+        Test.stopTest();
+        System.assertNotEquals(null, caseAfterUpdate.Total_open_case__c);
         System.assertNotEquals(null, caseAfterUpdate.Total_time_opened__c);
     }
 }

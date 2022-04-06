@@ -59,10 +59,12 @@ public class CaseTriggerHandler {
     }
 
     public void beforeInsert(Case newCase) {
-        
+
         helper.setSourceOrgFieldUponInsert(newCase);
         helper.generateExternalIdForNewCase(newCase);
         helper.setScheduleBookingId(newCase);
+
+        helper.setDateTimeOfLastStatusChange(newCase);
     }
 
     public void beforeUpdate(Case oldCase, Case newCase) {
@@ -72,6 +74,8 @@ public class CaseTriggerHandler {
         helper.setTotalTimeOpened(oldCase, newCase);
         helper.updateSourceOrgField(oldCase, newCase);
 
+        helper.setDateTimeOfLastStatusChange(oldCase, newCase);
+        helper.calculatePreviousCloseTimes(oldCase, newCase);
     }
 
     public void afterInsert(Case newCase) {

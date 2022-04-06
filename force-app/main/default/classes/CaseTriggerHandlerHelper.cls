@@ -16,14 +16,15 @@ public with sharing class CaseTriggerHandlerHelper {
 
         if (newCase.isClosed != oldCase.isClosed) {
             if (newCase.isClosed) {
-                System.debug(LoggingLevel.ERROR, newCase.Recent_closed_Date__c);
                 if (newCase.Recent_closed_Date__c != null) {
 
                     Long newTotal = newCase.Total_open_case__c.longValue() + (Datetime.now().getTime() - newCase.Recent_closed_Date__c.getTime());
+
                     newCase.Total_time_opened__c = calculateTotalTimeOpened(newTotal);
                     newCase.Total_open_case__c = newTotal;
                 } else {
                     Long newTotal = Datetime.now().getTime() - newCase.CreatedDate.getTime();
+
                     newCase.Total_open_case__c = newTotal;
                     newCase.Total_time_opened__c = calculateTotalTimeOpened(newTotal);
                 }
@@ -50,8 +51,6 @@ public with sharing class CaseTriggerHandlerHelper {
 
     public void updateSourceOrgField(Case oldCase, Case newCase) {
 
-        System.debug(oldCase.Last_Change_Org_Id__c);
-        System.debug(newCase.Last_Change_Org_Id__c);
         //newCase.Last_Change_Org_Id__c != oldCase.Last_Change_Org_Id__c
         if (isSensitiveDataChanged(oldCase, newCase)) {
             if (RestUtilities.isRestApiContext() == false) {
@@ -123,6 +122,31 @@ public with sharing class CaseTriggerHandlerHelper {
 
         return 'D: ' + String.valueOf(days) + ' H: ' + String.valueOf(horusLeft) + ' M: ' + String.valueOf(minutesLeft);
     }
+    public void setDateTimeOfLastStatusChange(Case oldCase, Case newCase) {
+        System.debug(oldCase.Status);
+        System.debug(newCase.Status);
+        if (oldCase.Status != newCase.Status) {
+            newCase.Last_status_change_date__c = Datetime.now();
+            System.debug(newCase.Last_status_change_date__c);
+        }
+    }
+    public void setDateTimeOfLastStatusChange(Case newCase) {
+        newCase.Last_status_change_date__c = Datetime.now();
+        System.debug(newCase.Last_status_change_date__c);
+    }
+
+    public void calculatePreviousCloseTimes(Case oldCase, Case newCase) {
+        String statusIndicatingClosed = 'Closed';
+        if (oldCase.Status == statusIndicatingClosed && newCase.Status != statusIndicatingClosed) {
+            System.debug(newCase.previous_closed_total_time__c);
+            System.debug(newCase.Recent_close_time__c);
+            newCase.previous_closed_total_time__c = newCase.previous_closed_total_time__c += oldCase.Recent_close_time__c;
+
+            System.debug(newCase.previous_closed_total_time__c);
+            System.debug(newCase.Recent_close_time__c);
+        }
+    }
+
 }
 
 

@@ -8,6 +8,7 @@ public without sharing class CaseUtilities {
     public static final String RT_DELIVERY_COMPLAINT = 'Delivery_Complaint';
     public static final String RT_MISSING_DAMAGED_GOODS = 'Missing_Damaged_Goods';
     public static final String RT_OTHER = 'Other';
+    public static final String RT_OTHER_COMPLAINT = 'Other_Complaint';
 
     public static Id getRecordTypeIdByDevName(String rtDevName) {
 

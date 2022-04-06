@@ -1,8 +1,8 @@
 @RestResource(urlMapping='/cases/*')
 global with sharing class CaseEndpoint {
-    private static final String PARAM_EXTERNAL_ID = 'external_id';
-    private static final String EXCEPTION_MESSAGE_WRONG_PARAMETER_PROVIDED = 'Wrong parameter provided';
-    private static final String EXCEPTION_MESSAGE_CASE_NOT_FOUND = 'Case with given id not found';
+    @TestVisible private static final String PARAM_EXTERNAL_ID = 'external_id';
+    @TestVisible private static final String EXCEPTION_MESSAGE_WRONG_PARAMETER_PROVIDED = 'Wrong parameter provided';
+    @TestVisible private static final String EXCEPTION_MESSAGE_CASE_NOT_FOUND = 'Case with given id not found';
 
     @HttpPost
     global static void upsertCases() {
@@ -32,6 +32,7 @@ global with sharing class CaseEndpoint {
 
     @HttpDelete
     global static void deleteCases() {
+        
         String externalId = RestContext.request.params.get(PARAM_EXTERNAL_ID);
         TRY {
             deleteCasesByExternalId(externalId);
@@ -47,7 +48,7 @@ global with sharing class CaseEndpoint {
     }
 
     private static void deleteCasesByExternalId(String receivedExternalId) {
-        System.debug(receivedExternalId);
+
         List<String> externalIds = receivedExternalId.split(',');
         TRY {
             List<Case> casesToDelete = [SELECT External_Id__c FROM Case WHERE External_Id__c in :externalIds];
@@ -55,7 +56,6 @@ global with sharing class CaseEndpoint {
             if (casesToDelete.isEmpty()) {
                 throw new ResourceNotFoundException(EXCEPTION_MESSAGE_CASE_NOT_FOUND);
             }
-            System.debug(casesToDelete);
             delete casesToDelete;
         } CATCH (Exception e) {
             RestContext.response.responseBody = Blob.valueOf(e.getMessage());
