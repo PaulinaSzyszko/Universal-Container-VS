@@ -1,10 +1,5 @@
-trigger CaseTrigger on Case (before insert, before update) {
+trigger CaseTrigger on Case (before insert, before update, after update, after insert, after delete) {
 
     CaseTriggerHandler handler = new CaseTriggerHandler();
-    if (Trigger.isBefore && Trigger.isUpdate) {
-        handler.setTotalTimeOpened(Trigger.newMap, Trigger.oldMap);
-        handler.beforeUpdate(Trigger.new);
-        handler.beforeUpdate(Trigger.newMap, Trigger.oldMap);
-        handler.findScheduleBookingId(Trigger.new);
-    }
+    handler.run();
 }
